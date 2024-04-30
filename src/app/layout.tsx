@@ -10,7 +10,6 @@ import Analytics from '@/components/Analytics';
 import { DEFAULT_LANG, LOBE_LOCALE_COOKIE } from '@/const/locale';
 import AuthProvider from '@/layout/AuthProvider';
 import GlobalProvider from '@/layout/GlobalProvider';
-import LayoutRoutes from '@/layout/routes';
 import { isMobileDevice } from '@/utils/responsive';
 
 const RootLayout = async ({ children }: PropsWithChildren) => {
@@ -33,9 +32,7 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
       </head>
       <body>
         <GlobalProvider>
-          <AuthProvider>
-            <LayoutRoutes>{children}</LayoutRoutes>
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </GlobalProvider>
         {/* 在这里添加 Vercel Analytics 的组件 */}
         <VercelAnalytics />
