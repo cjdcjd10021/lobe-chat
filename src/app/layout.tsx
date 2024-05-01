@@ -1,7 +1,7 @@
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ResolvingViewport } from 'next';
 import { cookies } from 'next/headers';
-import { PropsWithChildren } from 'react';
+import { ReactNode } from 'react';
 import { isRtlLang } from 'rtl-detect';
 
 // 导入 Vercel Analytics 组件
@@ -12,7 +12,12 @@ import AuthProvider from '@/layout/AuthProvider';
 import GlobalProvider from '@/layout/GlobalProvider';
 import { isMobileDevice } from '@/utils/responsive';
 
-const RootLayout = async ({ children }: PropsWithChildren) => {
+type RootLayoutProps = {
+  children: ReactNode;
+  modal: ReactNode;
+};
+
+const RootLayout = async ({ children, modal }: RootLayoutProps) => {
   const cookieStore = cookies();
 
   const lang = cookieStore.get(LOBE_LOCALE_COOKIE);
@@ -32,7 +37,10 @@ const RootLayout = async ({ children }: PropsWithChildren) => {
       </head>
       <body>
         <GlobalProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            {modal}
+          </AuthProvider>
         </GlobalProvider>
         {/* 在这里添加 Vercel Analytics 的组件 */}
         <VercelAnalytics />
