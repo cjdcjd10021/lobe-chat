@@ -14,9 +14,10 @@ import { isMobileDevice } from '@/utils/responsive';
 
 type RootLayoutProps = {
   children: ReactNode;
+  modal: ReactNode;
 };
 
-const RootLayout = async ({ children }: RootLayoutProps) => {
+const RootLayout = async ({ children, modal }: RootLayoutProps) => {
   const cookieStore = cookies();
 
   const lang = cookieStore.get(LOBE_LOCALE_COOKIE);
@@ -36,7 +37,10 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
       </head>
       <body>
         <GlobalProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            {modal}
+          </AuthProvider>
         </GlobalProvider>
         {/* 在这里添加 Vercel Analytics 的组件 */}
         <VercelAnalytics />
