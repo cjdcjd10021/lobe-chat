@@ -12,6 +12,8 @@ import AuthProvider from '@/layout/AuthProvider';
 import GlobalProvider from '@/layout/GlobalProvider';
 import { isMobileDevice } from '@/utils/responsive';
 
+const inVercel = process.env.VERCEL === '1';
+
 type RootLayoutProps = {
   children: ReactNode;
   modal: ReactNode;
@@ -45,7 +47,7 @@ const RootLayout = async ({ children, modal }: RootLayoutProps) => {
         {/* 在这里添加 Vercel Analytics 的组件 */}
         <VercelAnalytics />
         <Analytics />
-        <SpeedInsights />
+        {inVercel && <SpeedInsights />}
       </body>
     </html>
   );
