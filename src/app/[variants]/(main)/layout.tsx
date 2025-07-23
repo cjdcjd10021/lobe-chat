@@ -1,4 +1,4 @@
-// 文件：src/app/[variants]/(main)/layout.tsx
+// src/app/[variants]/(main)/layout.tsx
 
 import { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
@@ -9,12 +9,9 @@ import { isDesktop } from '@/const/version';
 
 interface RootLayoutProps {
   children: ReactNode;
-  modal: ReactNode;
-  params: { variants: string };
 }
 
-const RootLayout = async ({ children, modal, params }: RootLayoutProps) => {
-  // 仅限桌面端访问
+const RootLayout = async ({ children }: RootLayoutProps) => {
   if (!isDesktop) {
     return notFound();
   }
@@ -23,13 +20,13 @@ const RootLayout = async ({ children, modal, params }: RootLayoutProps) => {
     <html lang="zh-CN" suppressHydrationWarning>
       <body
         style={{
-          minHeight:      '100vh',             // 视口高度
           display:        'flex',
           flexDirection:  'column',
-          justifyContent: 'space-between',     // 顶部内容 + 底部 footer 自动撑满
+          justifyContent: 'space-between',
+          minHeight:      '100vh',
         }}
       >
-        {/* ——— 主体内容 (ServerLayout + GlobalProvider + children) ——— */}
+        {/* 主体内容 */}
         <NuqsAdapter>
           <ServerConfigStoreProvider>
             <GlobalLayout appearance="auto" isMobile={false} locale="">
@@ -38,20 +35,20 @@ const RootLayout = async ({ children, modal, params }: RootLayoutProps) => {
           </ServerConfigStoreProvider>
         </NuqsAdapter>
 
-        {/* ——— 合规 ICP 备案号 （服务器端渲染） ——— */}
+        {/* 底部备案号 */}
         <footer
           style={{
             color:     '#999',
             fontSize:  '12px',
-            textAlign: 'center',
             padding:   '16px 0',
+            textAlign: 'center',
           }}
         >
           <a
             href="https://beian.miit.gov.cn/"
-            target="_blank"
             rel="noreferrer"
             style={{ color: '#999', textDecoration: 'none' }}
+            target="_blank"
           >
             京ICP备2024067157号-2
           </a>
