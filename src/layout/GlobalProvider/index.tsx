@@ -39,6 +39,7 @@ const GlobalLayout = async ({
   // get default feature flags to use with ssr
   const serverFeatureFlags = getServerFeatureFlagsValue();
   const serverConfig = await getServerGlobalConfig();
+
   return (
     <StyleRegistry>
       <AppTheme
@@ -56,7 +57,9 @@ const GlobalLayout = async ({
             serverConfig={serverConfig}
           >
             <QueryProvider>
-              <LobeAnalyticsProviderWrapper>{children}</LobeAnalyticsProviderWrapper>
+              <LobeAnalyticsProviderWrapper>
+                {children}
+              </LobeAnalyticsProviderWrapper>
             </QueryProvider>
             <StoreInitialization />
             <Suspense>
@@ -67,7 +70,28 @@ const GlobalLayout = async ({
           </ServerConfigStoreProvider>
         </Locale>
       </AppTheme>
+
       <AntdV5MonkeyPatch />
+
+      {/* —— 合规 ICP 备案号 —— */}
+      <footer
+        style={{
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#999',
+          padding: '16px 0',
+          marginTop: '24px',
+        }}
+      >
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: '#999', textDecoration: 'none' }}
+        >
+          京ICP备2024067157号-2
+        </a>
+      </footer>
     </StyleRegistry>
   );
 };
