@@ -57,9 +57,7 @@ const GlobalLayout = async ({
             serverConfig={serverConfig}
           >
             <QueryProvider>
-              <LobeAnalyticsProviderWrapper>
-                {children}
-              </LobeAnalyticsProviderWrapper>
+              <LobeAnalyticsProviderWrapper>{children}</LobeAnalyticsProviderWrapper>
             </QueryProvider>
             <StoreInitialization />
             <Suspense>
@@ -73,26 +71,22 @@ const GlobalLayout = async ({
 
       <AntdV5MonkeyPatch />
 
-      {/* eslint-disable sort-keys-fix/sort-keys-fix react/jsx-sort-props */}
+      {/* eslint-disable sort-keys-fix/sort-keys-fix, react/jsx-sort-props */}
       {/* —— 合规 ICP 备案号 —— */}
       <footer
         style={{
-          color: ' #999',
-          fontSize: '12px',
+          color:     '#999',
+          fontSize:  '12px',
           marginTop: '24px',
-          padding: '16px 0',
+          padding:   '16px 0',
           textAlign: 'center',
         }}
       >
-        <a
-          href="https://beian.miit.gov.cn/"
-          rel="noreferrer"
-          target="_blank"
-        >
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">
           京ICP备2024067157号-2
         </a>
       </footer>
-      {/* eslint-enable sort-keys-fix/sort-keys-fix react/jsx-sort-props */}
+      {/* eslint-enable sort-keys-fix/sort-keys-fix, react/jsx-sort-props */}
     </StyleRegistry>
   );
 };
