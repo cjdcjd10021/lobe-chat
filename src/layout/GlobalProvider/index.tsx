@@ -36,7 +36,7 @@ const GlobalLayout = async ({
 }: GlobalLayoutProps) => {
   const antdLocale = await getAntdLocale(userLocale);
 
-  // get default feature flags to use with ssr
+  // 获取服务器端 feature flags & 全局配置
   const serverFeatureFlags = getServerFeatureFlagsValue();
   const serverConfig = await getServerGlobalConfig();
 
@@ -73,25 +73,26 @@ const GlobalLayout = async ({
 
       <AntdV5MonkeyPatch />
 
+      {/* eslint-disable sort-keys-fix/sort-keys-fix react/jsx-sort-props */}
       {/* —— 合规 ICP 备案号 —— */}
       <footer
         style={{
-          textAlign: 'center',
+          color: ' #999',
           fontSize: '12px',
-          color: '#999',
-          padding: '16px 0',
           marginTop: '24px',
+          padding: '16px 0',
+          textAlign: 'center',
         }}
       >
         <a
           href="https://beian.miit.gov.cn/"
-          target="_blank"
           rel="noreferrer"
-          style={{ color: '#999', textDecoration: 'none' }}
+          target="_blank"
         >
           京ICP备2024067157号-2
         </a>
       </footer>
+      {/* eslint-enable sort-keys-fix/sort-keys-fix react/jsx-sort-props */}
     </StyleRegistry>
   );
 };
