@@ -7,9 +7,12 @@ import { ChatErrorType } from '@lobechat/types';
 
 import { checkAuth } from '@/app/(backend)/middleware/auth';
 import { createTraceOptions, initModelRuntimeFromDB } from '@/server/modules/ModelRuntime';
+import { FileService } from '@/server/services/file';
 import { type ChatStreamPayload } from '@/types/openai/chat';
 import { createErrorResponse } from '@/utils/errorResponse';
 import { getTracePayload } from '@/utils/trace';
+
+import { inlineImageUrls } from './inlineImages';
 
 // If user don't use fluid compute, will build  failed
 // this enforce user to enable fluid compute
@@ -33,6 +36,11 @@ export const POST = checkAuth(
       // ============  2. create chat completion   ============ //
 
       const data = (await req.json()) as ChatStreamPayload;
+
+      // Kimi Code only accepts base64-encoded images, inline remote URLs first
+      if (provider === 'kimi' && data.messages) {
+        data.messages = await inlineImageUrls(data.messages, new FileService(serverDB, userId));
+      }
 
       const tracePayload = getTracePayload(req);
 
