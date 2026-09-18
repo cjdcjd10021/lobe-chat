@@ -359,6 +359,9 @@ class ChatService {
     if (payload.presence_penalty === null) payload.presence_penalty = undefined;
     if (payload.frequency_penalty === null) payload.frequency_penalty = undefined;
 
+    // Kimi Code endpoint only accepts top_p = 0.95
+    if (provider === 'kimi') payload.top_p = 0.95;
+
     const sdkType = resolveRuntimeProvider(provider);
 
     /**
