@@ -17,21 +17,34 @@ const inferMimeType = (url: string): string => {
   }
 };
 
-const loadImageBytes = async (
-  url: string,
-  fileService: FileService,
-): Promise<{ bytes: Uint8Array; mimeType: string } | undefined> => {
+interface LoadResult {
+  detail: string;
+  image?: { bytes: Uint8Array; mimeType: string };
+}
+
+const errText = (e: unknown) => {
+  const err = e as any;
+  return [err?.name, err?.Code, err?.code, err?.message].filter(Boolean).slice(0, 2).join(':');
+};
+
+const tryLoadImage = async (url: string, fileService: FileService): Promise<LoadResult> => {
+  const detail: string[] = [`url=${url.slice(0, 100)}`];
+
   // Publicly accessible URLs can be fetched directly
   try {
     const res = await fetch(url);
+    detail.push(`fetch=${res.status}`);
     if (res.ok) {
       return {
-        bytes: new Uint8Array(await res.arrayBuffer()),
-        mimeType: res.headers.get('content-type') || inferMimeType(url),
+        detail: '',
+        image: {
+          bytes: new Uint8Array(await res.arrayBuffer()),
+          mimeType: res.headers.get('content-type') || inferMimeType(url),
+        },
       };
     }
-  } catch {
-    // fall through to storage lookup
+  } catch (e) {
+    detail.push(`fetchErr=${errText(e)}`);
   }
 
   // Uploaded files live in a private bucket; derive the object key from the URL path.
@@ -46,23 +59,28 @@ const loadImageBytes = async (
 
     for (const key of candidates) {
       try {
-        return { bytes: await fileService.getFileByteArray(key), mimeType: inferMimeType(url) };
-      } catch {
-        // key candidate missed, try the next one
+        return {
+          detail: '',
+          image: { bytes: await fileService.getFileByteArray(key), mimeType: inferMimeType(url) },
+        };
+      } catch (e) {
+        detail.push(`s3[${key.slice(0, 50)}]=${errText(e)}`);
       }
     }
   } catch {
-    // not a valid URL, fall through
+    detail.push('invalidUrl');
   }
 
-  return undefined;
+  return { detail: detail.join(' '), image: undefined };
 };
 
 export const inlineImageUrls = async (
   messages: OpenAIChatMessage[],
   fileService: FileService,
 ): Promise<OpenAIChatMessage[]> => {
-  return Promise.all(
+  const failures: string[] = [];
+
+  const result = await Promise.all(
     messages.map(async (message) => {
       if (typeof message.content === 'string') return message;
 
@@ -73,8 +91,15 @@ export const inlineImageUrls = async (
           const url = part.image_url?.url;
           if (!url || url.startsWith('data:')) return part;
 
-          const image = await loadImageBytes(url, fileService);
-          if (!image || image.bytes.byteLength > MAX_INLINE_IMAGE_SIZE) return part;
+          const { image, detail } = await tryLoadImage(url, fileService);
+          if (!image) {
+            failures.push(detail);
+            return part;
+          }
+          if (image.bytes.byteLength > MAX_INLINE_IMAGE_SIZE) {
+            failures.push(`tooLarge=${image.bytes.byteLength} url=${url.slice(0, 60)}`);
+            return part;
+          }
 
           return { ...part, image_url: { ...part.image_url, url: toDataUrl(image.bytes, image.mimeType) } };
         }),
@@ -83,4 +108,11 @@ export const inlineImageUrls = async (
       return { ...message, content };
     }),
   );
+
+  // Surface diagnostics to the client instead of silently leaking the remote URL
+  if (failures.length > 0) {
+    throw new Error(`[inlineImages] failed to inline ${failures.length} image(s): ${failures.join(' | ')}`);
+  }
+
+  return result;
 };

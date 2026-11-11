@@ -86,15 +86,16 @@ describe('inlineImageUrls', () => {
     expect((result[0].content as any[])[1].image_url.url).toBe(`data:image/png;base64,${pngBase64}`);
   });
 
-  it('should keep the original URL when nothing can load the image', async () => {
+  it('should throw diagnostics when nothing can load the image', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const fileService = {
       getFileByteArray: vi.fn().mockRejectedValue(new Error('no such key')),
     } as unknown as FileService;
 
     const url = 'https://bucket.r2.cloudflarestorage.com/files/1/gone.png';
-    const result = await inlineImageUrls([imageMessage(url)], fileService);
 
-    expect((result[0].content as any[])[1].image_url.url).toBe(url);
+    await expect(inlineImageUrls([imageMessage(url)], fileService)).rejects.toThrow(
+      /failed to inline 1 image.*no such key/,
+    );
   });
 });
