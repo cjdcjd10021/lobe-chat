@@ -67,6 +67,25 @@ describe('inlineImageUrls', () => {
     expect((result[0].content as any[])[1].image_url.url).toBe(`data:image/png;base64,${pngBase64}`);
   });
 
+  it('should strip the bucket segment for path-style storage URLs', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
+    const fileService = {
+      getFileByteArray: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('NoSuchKey'))
+        .mockResolvedValueOnce(pngBytes),
+    } as unknown as FileService;
+
+    const result = await inlineImageUrls(
+      [imageMessage('https://account.r2.cloudflarestorage.com/bucket/files/1/a.png')],
+      fileService,
+    );
+
+    expect(fileService.getFileByteArray).toHaveBeenNthCalledWith(1, 'bucket/files/1/a.png');
+    expect(fileService.getFileByteArray).toHaveBeenNthCalledWith(2, 'files/1/a.png');
+    expect((result[0].content as any[])[1].image_url.url).toBe(`data:image/png;base64,${pngBase64}`);
+  });
+
   it('should keep the original URL when nothing can load the image', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const fileService = {

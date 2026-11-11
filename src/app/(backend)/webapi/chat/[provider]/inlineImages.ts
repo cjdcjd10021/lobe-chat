@@ -34,13 +34,28 @@ const loadImageBytes = async (
     // fall through to storage lookup
   }
 
-  // Uploaded files live in a private bucket; the object key is the URL path
+  // Uploaded files live in a private bucket; derive the object key from the URL path.
+  // Path-style URLs (https://<endpoint>/<bucket>/<key>) carry the bucket as the first
+  // segment, virtual-hosted-style URLs do not — try both candidates.
   try {
-    const key = new URL(url).pathname.slice(1);
-    return { bytes: await fileService.getFileByteArray(key), mimeType: inferMimeType(url) };
+    const pathname = new URL(url).pathname.slice(1);
+    const withoutBucket = pathname.split('/').slice(1).join('/');
+    const candidates = [pathname, withoutBucket].filter(
+      (key, index, arr) => key && arr.indexOf(key) === index,
+    );
+
+    for (const key of candidates) {
+      try {
+        return { bytes: await fileService.getFileByteArray(key), mimeType: inferMimeType(url) };
+      } catch {
+        // key candidate missed, try the next one
+      }
+    }
   } catch {
-    return undefined;
+    // not a valid URL, fall through
   }
+
+  return undefined;
 };
 
 export const inlineImageUrls = async (
