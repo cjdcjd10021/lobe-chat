@@ -94,8 +94,8 @@ describe('inlineImageUrls', () => {
 
     const url = 'https://bucket.r2.cloudflarestorage.com/files/1/gone.png';
 
-    await expect(inlineImageUrls([imageMessage(url)], fileService)).rejects.toThrow(
-      /failed to inline 1 image.*no such key/,
-    );
+    await expect(inlineImageUrls([imageMessage(url)], fileService)).rejects.toMatchObject({
+      error: { message: expect.stringContaining('no such key'), type: 'inline_image_error' },
+    });
   });
 });

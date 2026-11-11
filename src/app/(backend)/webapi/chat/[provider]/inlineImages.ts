@@ -109,9 +109,17 @@ export const inlineImageUrls = async (
     }),
   );
 
-  // Surface diagnostics to the client instead of silently leaking the remote URL
+  // Surface diagnostics to the client instead of silently leaking the remote URL.
+  // NOTE: must be a plain object — Error instances serialize to {} in the route's
+  // JSON error response.
   if (failures.length > 0) {
-    throw new Error(`[inlineImages] failed to inline ${failures.length} image(s): ${failures.join(' | ')}`);
+    throw {
+      error: {
+        message: `[inlineImages] failed to inline ${failures.length} image(s): ${failures.join(' | ')}`,
+        type: 'inline_image_error',
+      },
+      errorType: 'InternalServerError',
+    };
   }
 
   return result;
