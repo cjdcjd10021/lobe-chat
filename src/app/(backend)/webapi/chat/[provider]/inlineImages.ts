@@ -78,9 +78,10 @@ export const inlineImageUrls = async (
   messages: OpenAIChatMessage[],
   fileService: FileService,
 ): Promise<OpenAIChatMessage[]> => {
-  const failures: string[] = [];
-
-  const result = await Promise.all(
+  // Images that cannot be inlined (missing from storage, over size limit) must never
+  // reach the Kimi Code endpoint as remote URLs — replace them with a text placeholder
+  // so the conversation can continue.
+  return Promise.all(
     messages.map(async (message) => {
       if (typeof message.content === 'string') return message;
 
@@ -91,14 +92,13 @@ export const inlineImageUrls = async (
           const url = part.image_url?.url;
           if (!url || url.startsWith('data:')) return part;
 
-          const { image, detail } = await tryLoadImage(url, fileService);
+          const { image } = await tryLoadImage(url, fileService);
           if (!image) {
-            failures.push(detail);
-            return part;
+            return { text: '[一张图片无法加载，已跳过]', type: 'text' as const };
           }
           if (image.bytes.byteLength > MAX_INLINE_IMAGE_SIZE) {
-            failures.push(`tooLarge=${image.bytes.byteLength} url=${url.slice(0, 60)}`);
-            return part;
+            const sizeMB = (image.bytes.byteLength / 1024 / 1024).toFixed(1);
+            return { text: `[一张 ${sizeMB}MB 的图片超出大小限制，已跳过]`, type: 'text' as const };
           }
 
           return { ...part, image_url: { ...part.image_url, url: toDataUrl(image.bytes, image.mimeType) } };
@@ -108,19 +108,4 @@ export const inlineImageUrls = async (
       return { ...message, content };
     }),
   );
-
-  // Surface diagnostics to the client instead of silently leaking the remote URL.
-  // NOTE: must be a plain object — Error instances serialize to {} in the route's
-  // JSON error response.
-  if (failures.length > 0) {
-    throw {
-      error: {
-        message: `[inlineImages] failed to inline ${failures.length} image(s): ${failures.join(' | ')}`,
-        type: 'inline_image_error',
-      },
-      errorType: 'InternalServerError',
-    };
-  }
-
-  return result;
 };

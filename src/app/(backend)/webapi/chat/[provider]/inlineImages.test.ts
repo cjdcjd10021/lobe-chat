@@ -86,16 +86,30 @@ describe('inlineImageUrls', () => {
     expect((result[0].content as any[])[1].image_url.url).toBe(`data:image/png;base64,${pngBase64}`);
   });
 
-  it('should throw diagnostics when nothing can load the image', async () => {
+  it('should replace unloadable images with a text placeholder', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const fileService = {
       getFileByteArray: vi.fn().mockRejectedValue(new Error('no such key')),
     } as unknown as FileService;
 
     const url = 'https://bucket.r2.cloudflarestorage.com/files/1/gone.png';
+    const result = await inlineImageUrls([imageMessage(url)], fileService);
 
-    await expect(inlineImageUrls([imageMessage(url)], fileService)).rejects.toMatchObject({
-      error: { message: expect.stringContaining('no such key'), type: 'inline_image_error' },
-    });
+    const parts = result[0].content as any[];
+    expect(parts[1]).toEqual({ text: '[一张图片无法加载，已跳过]', type: 'text' });
+  });
+
+  it('should replace oversized images with a text placeholder', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
+    const bigBytes = new Uint8Array(11 * 1024 * 1024);
+    const fileService = {
+      getFileByteArray: vi.fn().mockResolvedValue(bigBytes),
+    } as unknown as FileService;
+
+    const url = 'https://bucket.r2.cloudflarestorage.com/files/1/big.png';
+    const result = await inlineImageUrls([imageMessage(url)], fileService);
+
+    const parts = result[0].content as any[];
+    expect(parts[1]).toEqual({ text: '[一张 11.0MB 的图片超出大小限制，已跳过]', type: 'text' });
   });
 });
